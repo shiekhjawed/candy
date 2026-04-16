@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Candy Crush No Music</title>
+
+<style>
+body{
+    margin:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    font-family:Arial, sans-serif;
+    background: url('./background.jpg') no-repeat center center fixed;
+    background-size: cover;
+               /* background-size: 400% 400%;  
+        animation: gradientShift 15s ease infinite;   */
+    } 
+     /* @keyframes gradientShift {  
+    0% { background-position: 0% 50%; }  
+    50% { background-position: 100% 50%; }  
+    100% { background-position: 0% 50%; }  
+}   */
+
+
+.game{
+    text-align:center;
+    padding:20px;
+    border-radius:15px;
+    
+}
+
+h2{
+    color:rgb(165, 36, 36);
+    font-size: 48px;
+    margin: 10px 0 5px 0;
+
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(8,60px);
+    gap:4px;
+    background:#2196f3;
+    padding:10px;
+    border-radius:10px;
+    
+}
+
+.cell{
+    width:60px;
+    height:60px;
+    background-size:cover;
+    border-radius:8px;
+    cursor:pointer;
+    transition: all 0.1s;
+}
+
+.cell.selected{
+    outline:4px solid yellow;
+    transform: scale(1.1);
+}
+
+#resetButton{
+    margin-top:15px;
+    padding:12px 25px;
+    font-size:18px;
+    background:#861339;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+#resetButton:hover{
+    background:#c41e5a;
+}
+
+#levelDisplay {
+    font-size: 26px;
+    color: #FFD700;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+#scoreDisplay {
+    font-size: 22px;
+    color: #fff;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin: 10px 0;
+    display: inline-block;
+}
+
+#comboMsg {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 22px;
+    font-weight: bold;
+    z-index: 999;
+    display: none;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    animation: comboAnim 3s ease-out;
+}
+
+@keyframes comboAnim {
+    0% { transform: translateX(-50%) translateY(-30px) scale(0.7); opacity: 0; }
+    20% { transform: translateX(-50%) translateY(0) scale(1.1); opacity: 1; }
+    80% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-30px) scale(0.7); opacity: 0; }
+}
+
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    animation: popupAnim 0.5s ease-out;
+}
+
+@keyframes popupAnim {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.popup h3 { font-size: 36px; margin: 0 0 15px 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+.popup button { 
+    padding: 15px 35px; 
+    font-size: 20px; 
+    background: #4CAF50; 
+    color: white; 
+    border: none; 
+    border-radius: 10px; 
+    cursor: pointer; 
+    margin-top: 20px; 
+}
+.popup button:hover { background: #45a049; transform: scale(1.08); }
+</style>
+</head>
+
+<body>
+
+<div class="game">
+    <h2>Candy Crush </h2>
+    
+    <div id="levelDisplay">Level: <span id="level">1</span></div>
+    
+    <div id="scoreDisplay">
+        Score: <span id="score">0</span> / <span id="targetScore">3000</span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <button id="resetButton" onclick="resetGame()">🔄 Restart Game</button>
+</div>
+
+<div id="comboMsg"></div>
+
+<div id="levelUpPopup" class="popup" style="display: none;">
+    <div class="popup-content">
+        <h3>🎉 LEVEL UP! 🎉</h3>
+        <p>🏆 Level <span id="nextLevelNum">2</span> Unlocked!</p>
+        <p>Next Target: <span id="newTarget">6000</span></p>
+        <button onclick="nextLevel()">Continue ➡️</button>
+    </div>
+</div>
+
+<script>
+
+const ROWS = 8, COLS = 8;
+let board = [];
+let selected = null;
+let score = 0;
+let level = 1;
+let targetScore = 3000;
+let busy = false;
+
+const colors = ["Blue", "Red", "Green", "Yellow", "Purple"];
+const CHOCO = "Choco.png";
+
+function getColor(c) {
+    if (!c) return null;
+    return c.split("-")[0].replace(".png", "");
+}
+
+function rand() {
+    return colors[Math.floor(Math.random() * colors.length)] + ".png";
+}
+
+function striped(color, dir) {
+    return `${color}-Striped-${dir}.png`;
+}
+
+function isChoco(candy) {
+    return candy && candy.includes("Choco");
+}
+
+function isStriped(candy) {
+    return candy && candy.includes("Striped");
+}
+
+function showCombo(msg, color = 'linear-gradient(45deg, #ff0080, #ff8c00)') {
+    const comboEl = document.getElementById('comboMsg');
+    comboEl.textContent = msg;
+    comboEl.style.background = color;
+    comboEl.style.display = 'block';
+    setTimeout(() => comboEl.style.display = 'none', 3000);
+}
+
+function calculateComboMultiplier() {
+    let chocoCount = 0;
+    let stripedCount = 0;
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            let candy = board[r][c];
+            if (isChoco(candy)) chocoCount++;
+            if (isStriped(candy)) stripedCount++;
+        }
+    }
+
+    let multiplier = 1;
+    let comboMsg = "";
+    let comboColor = 'linear-gradient(45deg, #ff0080, #ff8c00)';
+
+    if (chocoCount >= 1 && stripedCount >= 1) {
+        multiplier = 2.5;
+        comboMsg = `⚡ CHOCO + STRIPED! (2.5x)`;
+        comboColor = 'linear-gradient(45deg, #00ff88, #00ccff)';
+    } else if (chocoCount >= 2) {
+        multiplier = 3;
+        comboMsg = `💥 CHOCO COMBO! (3x)`;
+        comboColor = 'linear-gradient(45deg, #ff4444, #ff8888)';
+    } else if (stripedCount >= 2) {
+        multiplier = 2;
+        comboMsg = `🔥 STRIPED COMBO! (2x)`;
+        comboColor = 'linear-gradient(45deg, #ffaa00, #ffdd44)';
+    } else if (chocoCount >= 1) {
+        multiplier = 1.5;
+        comboMsg = `⭐ CHOCO BONUS! (1.5x)`;
+    } else if (stripedCount >= 1) {
+        multiplier = 1.5;
+        comboMsg = `⭐ STRIPED BONUS! (1.5x)`;
+    }
+
+    if (comboMsg) showCombo(comboMsg, comboColor);
+    return multiplier;
+}
+
+function create() {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    board = [];
+    for (let r = 0; r < ROWS; r++) {
+        board[r] = [];
+        for (let c = 0; c < COLS; c++) {
+            board[r][c] = rand();
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+            cell.onclick = click;
+            grid.appendChild(cell);
+        }
+    }
+    update();
+}
+
+function update() {
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach((cell, i) => {
+        const r = Math.floor(i / COLS);
+        const c = i % COLS;
+        const val = board[r][c];
+        cell.style.backgroundImage = val ? `url('./images/${val}')` : "none";
+    });
+    updateDisplay();
+}
+
+function updateDisplay() {
+    document.getElementById("level").innerText = level;
+    document.getElementById("score").innerText = score.toLocaleString();
+    document.getElementById("targetScore").innerText = targetScore.toLocaleString();
+}
+
+function click(e) {
+    if (busy) return;
+    const r = +e.target.dataset.r;
+    const c = +e.target.dataset.c;
+
+    if (!selected) {
+        selected = { r, c };
+        e.target.classList.add("selected");
+        return;
+    }
+
+    const dr = Math.abs(selected.r - r);
+    const dc = Math.abs(selected.c - c);
+
+    if (dr + dc === 1) {
+        swap(selected.r, selected.c, r, c);
+    }
+
+    document.querySelectorAll(".cell").forEach(x => x.classList.remove("selected"));
+    selected = null;
+}
+
+function swap(r1, c1, r2, c2) {
+    [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+    update();
+
+    if (find().matches.length > 0) {
+        busy = true;
+        setTimeout(crush, 200);
+    } else {
+        [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+        update();
+    }
+}
+
+function find() {
+    let matches = new Set();
+    let specials = [];
+
+    // Horizontal matches
+    for (let r = 0; r < ROWS; r++) {
+        let count = 1;
+        for (let c = 1; c <= COLS; c++) {
+            if (c < COLS && getColor(board[r][c]) === getColor(board[r][c-1])) {
+                count++;
+            } else {
+                if (count >= 3) {
+                    const start = c - count;
+                    for (let k = 0; k < count; k++) {
+                        matches.add(`${r},${start + k}`);
+                    }
+                    if (count >= 5) {
+                        specials.push({r: r, c: start + 2, type: CHOCO});
+                    } else if (count === 4) {
+                        const color = getColor(board[r][start]);
+                        specials.push({r: r, c: start + 1, type: striped(color, "Horizontal")});
+                    }
+                }
+                count = 1;
+            }
+        }
+    }
+
+    // Vertical matches
+    for (let c = 0; c < COLS; c++) {
+        let count = 1;
+        for (let r = 1; r <= ROWS; r++) {
+            if (r < ROWS && getColor(board[r][c]) === getColor(board[r-1][c])) {
+                count++;
+            } else {
+                if (count >= 3) {
+                    const start = r - count;
+                    for (let k = 0; k < count; k++) {
+                        matches.add(`${start + k},${c}`);
+                    }
+                    if (count >= 5) {
+                        specials.push({r: start + 2, c: c, type: CHOCO});
+                    } else if (count === 4) {
+                        const color = getColor(board[start][c]);
+                        specials.push({r: start + 1, c: c, type: striped(color, "Vertical")});
+                    }
+                }
+                count = 1;
+            }
+        }
+    }
+
+    return { 
+        matches: [...matches].map(x => x.split(",").map(Number)), 
+        specials 
+    };
+}
+
+function crush() {
+    let { matches, specials } = find();
+
+    if (matches.length === 0) {
+        busy = false;
+        checkLevelUp();
+        return;
+    }
+
+    const multiplier = calculateComboMultiplier();
+    let baseScore = matches.length * 10;
+    let specialBonus = 0;
+
+    matches.forEach(([r, c]) => {
+        let candy = board[r][c];
+        if (isChoco(candy)) specialBonus += 150;
+        if (isStriped(candy)) specialBonus += 100;
+    });
+
+    score += Math.round(baseScore * multiplier) + Math.round(specialBonus * multiplier);
+    updateDisplay();
+
+    // Clear matched candies
+    matches.forEach(([r, c]) => board[r][c] = null);
+
+    // Create new special candies
+    specials.forEach(s => {
+        if (s.r >= 0 && s.c >= 0 && s.r < ROWS && s.c < COLS && !board[s.r][s.c]) {
+            board[s.r][s.c] = s.type;
+        }
+    });
+
+    update();
+    setTimeout(drop, 300);
+}
+
+function drop() {
+    for (let c = 0; c < COLS; c++) {
+        let write = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+            if (board[r][c] !== null) {
+                board[write][c] = board[r][c];
+                if (write !== r) board[r][c] = null;
+                write--;
+            }
+        }
+        while (write >= 0) {
+            board[write][c] = rand();
+            write--;
+        }
+    }
+    update();
+
+    setTimeout(() => {
+        if (find().matches.length > 0) {
+            crush();
+        } else {
+            busy = false;
+            checkLevelUp();
+        }
+    }, 300);
+}
+
+function checkLevelUp() {
+    if (score >= targetScore && !busy) {
+        level++;
+        targetScore += 3000;
+        document.getElementById('nextLevelNum').textContent = level;
+        document.getElementById('newTarget').textContent = targetScore.toLocaleString();
+        document.getElementById('levelUpPopup').style.display = 'flex';
+        busy = true;
+        selected = null;
+    }
+}
+
+function nextLevel() {
+    document.getElementById('levelUpPopup').style.display = 'none';
+    busy = false;
+    updateDisplay();
+}
+
+function resetGame() {
+    score = 0;
+    level = 1;
+    targetScore = 3000;
+    busy = false;
+    selected = null;
+    document.getElementById('levelUpPopup').style.display = 'none';
+    create();
+    updateDisplay();
+}
+
+// Start the game
+create();
+updateDisplay();
+
+</script>
+
+</body>
+</html> 
+
+
+
+ 
+      
+
+  
