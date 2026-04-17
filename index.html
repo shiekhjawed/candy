@@ -1,8 +1,10 @@
+
+</html> -
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Candy Crush No music</title>
+<title>Candy-crush </title>
 
 <style>
 body{
@@ -11,8 +13,9 @@ body{
     justify-content:center;
     align-items:center;
     min-height:100vh;
-    font-family:Arial;
+    font-family:Arial, sans-serif;
     background: url('./background.jpg') no-repeat center center fixed;
+    background-size: cover;
 }
 
 .game{
@@ -24,6 +27,7 @@ body{
 h2{
     color:rgb(165, 36, 36);
     font-size: 48px;
+    margin: 10px 0 5px 0;
 }
 
 .grid{
@@ -41,37 +45,44 @@ h2{
     background-size:cover;
     border-radius:8px;
     cursor:pointer;
+    transition: all 0.1s;
 }
 
 .cell.selected{
-    outline:3px solid yellow;
+    outline:4px solid yellow;
+    transform: scale(1.1);
 }
 
 #resetButton{
     margin-top:15px;
-    padding:10px 20px;
-    font-size:16px;
+    padding:12px 25px;
+    font-size:18px;
     background:#861339;
     color:white;
     border:none;
-    border-radius:5px;
+    border-radius:8px;
     cursor:pointer;
 }
 
+#resetButton:hover{
+    background:#c41e5a;
+}
+
 #levelDisplay {
-    font-size: 24px;
+    font-size: 26px;
     color: #FFD700;
     margin: 10px 0;
     font-weight: bold;
 }
 
 #scoreDisplay {
-    font-size: 20px;
+    font-size: 22px;
     color: #fff;
-    background: rgba(0,0,0,0.5);
-    padding: 10px;
-    border-radius: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 12px 20px;
+    border-radius: 12px;
     margin: 10px 0;
+    display: inline-block;
 }
 
 #comboMsg {
@@ -79,23 +90,21 @@ h2{
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(45deg, #ff0080, #ff8c00);
-    color: white;
     padding: 15px 30px;
     border-radius: 25px;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
     z-index: 999;
     display: none;
     box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-    animation: comboAnim 2s ease-out;
+    animation: comboAnim 3s ease-out;
 }
 
 @keyframes comboAnim {
-    0% { transform: translateX(-50%) translateY(-20px) scale(0.8); opacity: 0; }
+    0% { transform: translateX(-50%) translateY(-30px) scale(0.7); opacity: 0; }
     20% { transform: translateX(-50%) translateY(0) scale(1.1); opacity: 1; }
     80% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateX(-50%) translateY(-20px) scale(0.8); opacity: 0; }
+    100% { transform: translateX(-50%) translateY(-30px) scale(0.7); opacity: 0; }
 }
 
 .popup {
@@ -126,16 +135,25 @@ h2{
     to { transform: scale(1); opacity: 1; }
 }
 
-.popup h3 { font-size: 32px; margin: 0 0 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-.popup button { padding: 15px 30px; font-size: 18px; background: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; }
-.popup button:hover { background: #45a049; transform: scale(1.05); }
+.popup h3 { font-size: 36px; margin: 0 0 15px 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+.popup button { 
+    padding: 15px 35px; 
+    font-size: 20px; 
+    background: #4CAF50; 
+    color: white; 
+    border: none; 
+    border-radius: 10px; 
+    cursor: pointer; 
+    margin-top: 20px; 
+}
+.popup button:hover { background: #45a049; transform: scale(1.08); }
 </style>
 </head>
 
 <body>
 
 <div class="game">
-    <h2>🍭 Candy Crush 🍭</h2>
+    <h2>Candy Crush </h2>
     
     <div id="levelDisplay">Level: <span id="level">1</span></div>
     
@@ -145,7 +163,7 @@ h2{
 
     <div class="grid" id="grid"></div>
 
-    <button id="resetButton" onclick="resetGame()">🔄 Restart</button>
+    <button id="resetButton" onclick="resetGame()">🔄 Restart Game</button>
 </div>
 
 <div id="comboMsg"></div>
@@ -161,37 +179,300 @@ h2{
 
 <script>
 
-const ROWS=8, COLS=8;
-let board=[];
-let selected=null;
-let score=0;
-let level=1;
-let targetScore=3000;
-let busy=false;
+const ROWS = 8, COLS = 8;
+let board = [];
+let selected = null;
+let score = 0;
+let level = 1;
+let targetScore = 3000;
+let busy = false;
 
-const colors=["Blue","Red","Green","Yellow","Purple"];
-const CHOCO="Choco.png";
+const colors = ["Blue", "Red", "Green", "Yellow", "Purple"];
+const CHOCO = "Choco.png";
 
-function getColor(c){
-    if(!c) return null;
-    return c.split("-")[0].replace(".png","");
+function getColor(candy) {
+    if (!candy) return null;
+    // Handle both regular and special candies
+    if (candy.includes("Striped")) {
+        return candy.split("-")[0];
+    }
+    return candy.split("-")[0].replace(".png", "");
 }
 
-function rand(){
-    return colors[Math.floor(Math.random()*colors.length)] + ".png";
+function rand() {
+    return colors[Math.floor(Math.random() * colors.length)] + ".png";
 }
 
-function striped(color,dir){
+function striped(color, dir) {
     return `${color}-Striped-${dir}.png`;
 }
 
-// ✅ FIXED: Better detection
 function isChoco(candy) {
-    return candy && (candy.includes("Choco") || candy === CHOCO);
+    return candy && candy === CHOCO;
 }
 
 function isStriped(candy) {
     return candy && candy.includes("Striped");
+}
+
+function showCombo(msg, color = 'linear-gradient(45deg, #ff0080, #ff8c00)') {
+    const comboEl = document.getElementById('comboMsg');
+    comboEl.textContent = msg;
+    comboEl.style.background = color;
+    comboEl.style.display = 'block';
+    setTimeout(() => comboEl.style.display = 'none', 3000);
+}
+
+function calculateComboMultiplier(matches) {
+    let chocoCount = 0;
+    let stripedCount = 0;
+
+    // Count specials in current matches only
+    matches.forEach(([r, c]) => {
+        let candy = board[r][c];
+        if (isChoco(candy)) chocoCount++;
+        if (isStriped(candy)) stripedCount++;
+    });
+
+    let multiplier = 1;
+    let comboMsg = "";
+    let comboColor = 'linear-gradient(45deg, #ff0080, #ff8c00)';
+
+    if (chocoCount >= 1 && stripedCount >= 1) {
+        multiplier = 2.5;
+        comboMsg = `⚡ CHOCO + STRIPED! (2.5x)`;
+        comboColor = 'linear-gradient(45deg, #00ff88, #00ccff)';
+    } else if (chocoCount >= 2) {
+        multiplier = 3;
+        comboMsg = `💥 CHOCO COMBO! (3x)`;
+        comboColor = 'linear-gradient(45deg, #ff4444, #ff8888)';
+    } else if (stripedCount >= 2) {
+        multiplier = 2;
+        comboMsg = `🔥 STRIPED COMBO! (2x)`;
+        comboColor = 'linear-gradient(45deg, #ffaa00, #ffdd44)';
+    } else if (chocoCount >= 1) {
+        multiplier = 1.5;
+        comboMsg = `⭐ CHOCO BONUS! (1.5x)`;
+    } else if (stripedCount >= 1) {
+        multiplier = 1.5;
+        comboMsg = `⭐ STRIPED BONUS! (1.5x)`;
+    }
+
+    if (comboMsg) showCombo(comboMsg, comboColor);
+    return multiplier;
+}
+
+function create() {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    board = [];
+    for (let r = 0; r < ROWS; r++) {
+        board[r] = [];
+        for (let c = 0; c < COLS; c++) {
+            board[r][c] = rand();
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+            cell.onclick = click;
+            grid.appendChild(cell);
+        }
+    }
+    
+    // Ensure no matches at start
+    while (find().matches.length > 0) {
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                board[r][c] = rand();
+            }
+        }
+    }
+    
+    update();
+}
+
+function update() {
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach((cell, i) => {
+        const r = Math.floor(i / COLS);
+        const c = i % COLS;
+        const val = board[r][c];
+        cell.style.backgroundImage = val ? `url('./images/${val}')` : "none";
+    });
+    updateDisplay();
+}
+
+function updateDisplay() {
+    document.getElementById("level").innerText = level;
+    document.getElementById("score").innerText = score.toLocaleString();
+    document.getElementById("targetScore").innerText = targetScore.toLocaleString();
+}
+
+function click(e) {
+    if (busy) return;
+    const r = +e.target.dataset.r;
+    const c = +e.target.dataset.c;
+
+    if (!selected) {
+        selected = { r, c };
+        e.target.classList.add("selected");
+        return;
+    }
+
+    const dr = Math.abs(selected.r - r);
+    const dc = Math.abs(selected.c - c);
+
+    if (dr + dc === 1) {
+        swap(selected.r, selected.c, r, c);
+    }
+
+    document.querySelectorAll(".cell").forEach(x => x.classList.remove("selected"));
+    selected = null;
+}
+
+function swap(r1, c1, r2, c2) {
+    [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+    update();
+
+    if (find().matches.length > 0) {
+        busy = true;
+        setTimeout(crush, 200);
+    } else {
+        // Swap back if no match
+        setTimeout(() => {
+            [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+            update();
+        }, 150);
+    }
+}
+
+function find() {
+    let matches = new Set();
+    let specials = [];
+
+    // Horizontal matches
+    for (let r = 0; r < ROWS; r++) {
+        let count = 1;
+        for (let c = 1; c <= COLS; c++) {
+            if (c < COLS && getColor(board[r][c]) === getColor(board[r][c-1])) {
+                count++;
+            } else {
+                if (count >= 3) {
+                    const start = c - count;
+                    for (let k = 0; k < count; k++) {
+                        matches.add(`${r},${start + k}`);
+                    }
+                    if (count >= 5) {
+                        specials.push({r: r, c: start + 2, type: CHOCO});
+                    } else if (count === 4) {
+                        const color = getColor(board[r][start]);
+                        specials.push({r: r, c: start + 1, type: striped(color, "Horizontal")});
+                    }
+                }
+                count = 1;
+            }
+        }
+    }
+
+    // Vertical matches
+    for (let c = 0; c < COLS; c++) {
+        let count = 1;
+        for (let r = 1; r <= ROWS; r++) {
+            if (r < ROWS && getColor(board[r][c]) === getColor(board[r-1][c])) {
+                count++;
+            } else {
+                if (count >= 3) {
+                    const start = r - count;
+                    for (let k = 0; k < count; k++) {
+                        matches.add(`${start + k},${c}`);
+                    }
+                    if (count >= 5) {
+                        specials.push({r: start + 2, c: c, type: CHOCO});
+                    } else if (count === 4) {
+                        const color = getColor(board[start][c]);
+                        specials.push({r: start + 1, c: c, type: striped(color, "Vertical")});
+                    }
+                }
+                count = 1;
+            }
+        }
+    }
+
+    return { 
+        matches: [...matches].map(x => x.split(",").map(Number)), 
+        specials 
+    };
+}
+
+function crush() {
+    let { matches, specials } = find();
+
+    if (matches.length === 0) {
+        busy = false;
+        checkLevelUp();
+        return;
+    }
+
+    // Calculate multiplier based on CURRENT matches only
+    const multiplier = calculateComboMultiplier(matches);
+    let baseScore = matches.length * 10;
+    let specialBonus = 0;
+
+    // Calculate special bonuses for matched candies
+    matches.forEach(([r, c]) => {
+        let candy = board[r][c];
+        if (isChoco(candy)) specialBonus += 150;
+        if (isStriped(candy)) specialBonus += 100;
+    });
+
+    // Add score with proper multiplier
+    score += Math.round((baseScore + specialBonus) * multiplier);
+    updateDisplay();
+
+    // Store specials before clearing board
+    const validSpecials = specials.filter(s => 
+        s.r >= 0 && s.r < ROWS && s.c >= 0 && s.c < COLS
+    );
+
+    // Clear matched candies
+    matches.forEach(([r, c]) => board[r][c] = null);
+
+    // Create new special candies
+    validSpecials.forEach(s => {
+        if (!board[s.r][s.c]) {
+            board[s.r][s.c] = s.type;
+        }
+    });
+
+    update();
+    setTimeout(drop, 300);
+}
+
+function drop() {
+    for (let c = 0; c < COLS; c++) {
+        let write = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+            if (board[r][c] !== null) {
+                board[write][c] = board[r][c];
+                if (write !== r) board[r][c] = null;
+                write--;
+            }
+        }
+        while (write >= 0) {
+            board[write][c] = rand();
+            write--;
+        }
+    }
+    update();
+
+    setTimeout(() => {
+        if (find().matches.length > 0) {
+            crush();
+        } else {
+            busy = false;
+            checkLevelUp();
+        }
+    }, 300);
 }
 
 function checkLevelUp() {
@@ -202,7 +483,6 @@ function checkLevelUp() {
         document.getElementById('newTarget').textContent = targetScore.toLocaleString();
         document.getElementById('levelUpPopup').style.display = 'flex';
         busy = true;
-        document.querySelectorAll(".cell").forEach(x=>x.classList.remove("selected"));
         selected = null;
     }
 }
@@ -213,265 +493,19 @@ function nextLevel() {
     updateDisplay();
 }
 
-function showCombo(msg) {
-    const comboEl = document.getElementById('comboMsg');
-    comboEl.textContent = msg;
-    comboEl.style.display = 'block';
-    setTimeout(() => comboEl.style.display = 'none', 2500);
-}
-
-// 🔥 FIXED COMBO DETECTION - Checks CURRENT BOARD STATE
-function calculateComboMultiplier(matches) {
-    let chocoCount = 0;
-    let stripedCount = 0;
-    
-    // ✅ CHECK ALL CANDIES ON BOARD (not just matches)
-    for(let r=0; r<ROWS; r++) {
-        for(let c=0; c<COLS; c++) {
-            let candy = board[r][c];
-            if (isChoco(candy)) chocoCount++;
-            if (isStriped(candy)) stripedCount++;
-        }
-    }
-    
-    let multiplier = 1;
-    let comboMsg = "";
-    
-    // 🎯 PRIORITY CHECKS
-    if (chocoCount >= 2) {
-        multiplier = 3;
-        comboMsg = `💥 CHOCO x${chocoCount} COMBO! (3x Score)`;
-    }
-    else if (stripedCount >= 2) {
-        multiplier = 2;
-        comboMsg = `🔥 STRIPED x${stripedCount} COMBO! (2x Score)`;
-    }
-    else if (chocoCount >= 1 && stripedCount >= 1) {
-        multiplier = 2.5;
-        comboMsg = `⚡ CHOCO+STRIPED COMBO! (2.5x Score)`;
-    }
-    else if (chocoCount >= 1) {
-        multiplier = 1.5;
-        comboMsg = `⭐ CHOCO BONUS! (1.5x Score)`;
-    }
-    else if (stripedCount >= 1) {
-        multiplier = 1.5;
-        comboMsg = `⭐ STRIPED BONUS! (1.5x Score)`;
-    }
-    
-    if (comboMsg) {
-        showCombo(comboMsg);
-        console.log(`Combo Debug: Choco=${chocoCount}, Striped=${stripedCount}, Multiplier=${multiplier}`); // DEBUG
-        return multiplier;
-    }
-    return 1;
-}
-
-function create(){
-    let grid=document.getElementById("grid");
-    grid.innerHTML="";
-    board=[];
-    for(let r=0;r<ROWS;r++){
-        board[r]=[];
-        for(let c=0;c<COLS;c++){
-            board[r][c]=rand();
-            let cell=document.createElement("div");
-            cell.className="cell";
-            cell.dataset.r=r;
-            cell.dataset.c=c;
-            cell.onclick=click;
-            grid.appendChild(cell);
-        }
-    }
-    update();
-}
-
-function updateDisplay() {
-    document.getElementById("level").innerText = level;
-    document.getElementById("score").innerText = score.toLocaleString();
-    document.getElementById("targetScore").innerText = targetScore.toLocaleString();
-}
-
-function update(){
-    let cells=document.querySelectorAll(".cell");
-    cells.forEach((cell,i)=>{
-        let r=Math.floor(i/COLS);
-        let c=i%COLS;
-        let val=board[r][c];
-        cell.style.backgroundImage=val ? `url('./images/${val}')` : "none";
-    });
-    updateDisplay();
-}
-
-function click(e){
-    if(busy) return;
-    let r=+e.target.dataset.r;
-    let c=+e.target.dataset.c;
-    if(!selected){
-        selected={r,c};
-        e.target.classList.add("selected");
-        return;
-    }
-    let dr=Math.abs(selected.r-r);
-    let dc=Math.abs(selected.c-c);
-    if(dr+dc===1){
-        swap(selected.r,selected.c,r,c);
-    }
-    document.querySelectorAll(".cell").forEach(x=>x.classList.remove("selected"));
-    selected=null;
-}
-
-function swap(r1,c1,r2,c2){
-    [board[r1][c1],board[r2][c2]]=[board[r2][c2],board[r1][c1]];
-    update();
-    if(find().matches.length>0){
-        busy=true;
-        setTimeout(crush,200);
-    }else{
-        [board[r1][c1],board[r2][c2]]=[board[r2][c2],board[r1][c1]];
-        update();
-    }
-}
-
-function find(){
-    let matches=new Set();
-    let specials=[];
-    
-    // HORIZONTAL
-    for(let r=0;r<ROWS;r++){
-        let count=1;
-        for(let c=1;c<=COLS;c++){
-            if(c<COLS && getColor(board[r][c])===getColor(board[r][c-1])){
-                count++;
-            }else{
-                if(count>=3){
-                    let start=c-count;
-                    let color=getColor(board[r][start]);
-                    for(let k=0;k<count;k++){
-                        matches.add(`${r},${start+k}`);
-                    }
-                    if(count>=5){
-                        specials.push({r:r, c:start+2, type:CHOCO});
-                    }else if(count===4){
-                        specials.push({r:r, c:start+1, type:striped(color,"Horizontal")});
-                    }
-                }
-                count=1;
-            }
-        }
-    }
-    
-    // VERTICAL
-    for(let c=0;c<COLS;c++){
-        let count=1;
-        for(let r=1;r<=ROWS;r++){
-            if(r<ROWS && getColor(board[r][c])===getColor(board[r-1][c])){
-                count++;
-            }else{
-                if(count>=3){
-                    let start=r-count;
-                    let color=getColor(board[start][c]);
-                    for(let k=0;k<count;k++){
-                        matches.add(`${start+k},${c}`);
-                    }
-                    if(count>=5){
-                        specials.push({r:start+2, c:c, type:CHOCO});
-                    }else if(count===4){
-                        specials.push({r:start+1, c:c, type:striped(color,"Vertical")});
-                    }
-                }
-                count=1;
-            }
-        }
-    }
-    
-    return {matches:[...matches].map(x=>x.split(",").map(Number)), specials};
-}
-
-function crush(){
-    let {matches,specials}=find();
-    
-    if(matches.length===0){
-        busy=false;
-        checkLevelUp();
-        return;
-    }
-    
-    // 🔥 FIXED: Check combos BEFORE clearing matches
-    let comboMultiplier = calculateComboMultiplier(matches);
-    
-    // Calculate scores
-    let regularScore = matches.length * 10 * comboMultiplier;
-    score += Math.round(regularScore);
-    
-    // Special bonuses
-    let specialBonus = 0;
-    matches.forEach(([r,c]) => {
-        let candy = board[r][c];
-        if (isChoco(candy)) specialBonus += 150 * comboMultiplier;
-        if (isStriped(candy)) specialBonus += 100 * comboMultiplier;
-    });
-    score += Math.round(specialBonus);
-    
-    updateDisplay();
-
-    // Clear matches AFTER scoring
-    matches.forEach(([r,c])=>{
-        board[r][c]=null;
-    });
-
-    // Place new specials
-    specials.forEach(s=>{
-        if(s.r>=0 && s.c>=0 && s.r<ROWS && s.c<COLS){
-            board[s.r][s.c]=s.type;
-        }
-    });
-
-    update();
-    setTimeout(drop,200);
-}
-
-function drop(){
-    for(let c=0;c<COLS;c++){
-        let write=ROWS-1;
-        for(let r=ROWS-1;r>=0;r--){
-            if(board[r][c]!==null){
-                board[write][c]=board[r][c];
-                if(write!==r) board[r][c]=null;
-                write--;
-            }
-        }
-        while(write>=0){
-            board[write][c]=rand();
-            write--;
-        }
-    }
-    update();
-    setTimeout(()=>{
-        if(find().matches.length>0){
-            crush();
-        }else{
-            busy=false;
-            checkLevelUp();
-        }
-    },200);
-}
-
-function resetGame(){
-    score=0;
-    level=1;
-    targetScore=3000;
-    busy=false;
+function resetGame() {
+    score = 0;
+    level = 1;
+    targetScore = 3000;
+    busy = false;
+    selected = null;
     document.getElementById('levelUpPopup').style.display = 'none';
-    document.getElementById('comboMsg').style.display = 'none';
     create();
-    updateDisplay();
 }
 
+// Start the game
 create();
-updateDisplay();
-
 </script>
 
 </body>
-</html>
+</html> 
